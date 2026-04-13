@@ -262,7 +262,6 @@ where
       ref mut attribute,
     } => {
       if !attribute.is_empty() {
-        // Check if the path is too specific
         if attribute[0] == "homeConfigurations" {
           if attribute.len() > 2 {
             bail!(
@@ -275,9 +274,8 @@ where
             );
           }
         } else if attribute.len() > 1 {
-          // User provided ".#myconfig" or similar - prepend homeConfigurations
+          // User provided ".#homeConfigurations.myconfig" or similar
           attribute.insert(0, String::from("homeConfigurations"));
-          // Re-validate after prepending
           if attribute.len() > 2 {
             bail!(
               "Attribute path is too specific: {}. Home Manager only allows \
@@ -288,12 +286,18 @@ where
               attribute.get(1).unwrap_or(&"<unknown>".to_string())
             );
           }
+        } else {
+          // User provided ".#myconfig" - prepend homeConfigurations
+          attribute.insert(0, String::from("homeConfigurations"));
         }
 
         debug!(
           "Using explicit attribute path from installable: {:?}",
           attribute
         );
+        if push_drv {
+          attribute.extend(toplevel);
+        }
         return Ok(res);
       }
 
